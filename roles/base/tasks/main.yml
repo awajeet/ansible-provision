@@ -1,0 +1,14 @@
+---
+- name: set the server MOTD
+  copy: src=motd
+        dest=/etc/motd
+        mode=644
+
+- name: Disable ssh root logins without the use of a valid ssh key
+  lineinfile: dest=/etc/ssh/sshd_config state=present regexp='^PermitRootLogin ' line='PermitRootLogin without-password'
+  notify: restart sshd
+
+- name: Disable password authentication for regular users
+  lineinfile: dest=/etc/ssh/sshd_config state=present regexp='^PasswordAuthentication ' line='PasswordAuthentication no'
+  notify: restart sshd
+

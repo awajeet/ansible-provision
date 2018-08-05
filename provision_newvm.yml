@@ -1,0 +1,67 @@
+- name: CREATE PLAYBOOK TO PROVISION UBUNTU SERVER in AZURE
+  hosts: localhost
+  connection: local
+  gather_facts: False
+  vars:
+    # Variables 'vnet', 'subnet', 'vmname' and 'resgrp' need to be provided at command line with arg --extra-vars
+    dnsname: '{{ vmname }}.eastus.cloudapp.azure.com'
+    # The DNS name might not be right depending on your region!!
+    ip: "{{ lookup ('dig', '{{ dnsname }}') }}"
+   
+  tasks:
+  - debug: msg="Public DNS name {{ dnsname }} resolved to IP {{ ip }}. "
+# The following check is disabled so that the playbook does not stop upon existence of DNS name. Otherwise
+# it cannot be re-run after VM creation
+#  - name: Check if DNS is taken
+#    fail: msg="That DNS name seems to be already taken"
+#    when: ip != 'NXDOMAIN'
+  - name: Create storage account
+    azure_rm_storageaccount:
+      resource_group: '{{ resgrp }}'
+      name: '{{ vmname }}'
+      account_type: Standard_LRS
+  - name: Create security group that allows SSH
+    azure_rm_securitygroup: 
+      resource_group: '{{ resgrp }}'
+      name: '{{ vmname }}'
+      rules: 
+        - name: SSH 
+          protocol: Tcp 
+          destination_port_range: 22  
+          access: Allow  
+          priority: 101 
+          direction: Inbound
+  - name: Create public IP address
+    azure_rm_publicipaddress: 
+      resource_group: '{{ resgrp }}'
+      allocation_method: Static 
+      name: '{{ vmname }}'
+      domain_name_label: '{{ vmname }}'
+  - name: Create NIC
+    azure_rm_networkinterface:
+      resource_group: '{{ resgrp }}'
+      name: '{{ vmname }}'
+      virtual_network: '{{ vnet }}'
+      subnet: '{{ subnet }}'
+      public_ip_name: '{{ vmname }}'
+      security_group: '{{ vmname }}'
+  - name: Create VM
+    azure_rm_virtualmachine:
+      resource_group: '{{ resgrp }}'
+      name: '{{ vmname }}'
+      storage_account: '{{ vmname }}'
+      storage_container: '{{ vmname }}'
+      storage_blob: '{{ vmname }}.vhd'
+      network_interfaces: '{{ vmname }}'
+      vm_size: Standard_DS1_v2
+      admin_username: azureuser
+      admin_password: Azure@root
+      ssh_password_enabled: true
+      ssh_public_keys: 
+        - path: /home/azureuser/.ssh/authorized_keys
+          key_data: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDYoGR1W2KLZbyUhngV786eiXeTTMWW/up7bvzPE0fBtRffj1oK/EKZpLQ8VIFFJT6e4YiDDUVGxiyPRFFfQ497/3yi21vNISzDkMdg+xAb8qLtLngsycFF3+3EaoAngou2x03+UWvIh8YNWCvLHMQRUYQeQDmPdKEsw7wJ3iQAN0Wdkw7XlFEft9NHYr432LyJlz9CCmOU/EKe9E/05loxIZQL6arrQpRzdhwt9qUG4duzl65ylLPw+fhVvEYduUn7n7af+mMGlSsh2LTzc0WFIcn6Eo4BvIDn70FZIg2kfJlgiD1XDZxUdnTu4uaUJbzYI7IDVAt3w4Rg0a1mQZMr azureuser@myVM"
+      image:
+        offer: UbuntuServer
+        publisher: Canonical
+        sku: '16.04-LTS'
+        version: latest

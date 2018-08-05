@@ -1,0 +1,8 @@
+--- 
+provisioned_users: 
+   
+  - name: root
+    encrypted_password: $6$CXQyy72C1$.7sLWjDKyZsT.FdKQ8lR8WsPKs1EKbjhOkraKDlDTqRe.wNItGT0Lr0fn367ljwDLK5nCqqt.T3XZ/mGeb1Vs/
+    public_key: ~/.ssh/id_rsa.pub
+    sudo: true
+    adm: true

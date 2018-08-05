@@ -1,0 +1,14 @@
+---
+- name: Setting Configuration through ansible playbook 
+  hosts: '{{ vmname }}'
+  user: azureuser
+  sudo: yes	
+  vars:
+    username: azureuser
+    public_key: ~/.ssh/id_rsa.pub
+  gather_facts: yes
+  roles:
+    - base
+    - users
+    - ufw
+

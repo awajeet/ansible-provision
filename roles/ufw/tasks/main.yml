@@ -1,0 +1,12 @@
+---
+- name: install ufw
+  apt: pkg=ufw state=present
+
+- name: disable and reset firewall
+  ufw: state=reset
+
+- name: Setting up firewall for ssh
+  ufw: rule=allow name=OpenSSH
+
+- name: reload and enable firewall
+  ufw: state=enabled policy=deny
